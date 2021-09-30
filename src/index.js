@@ -168,7 +168,7 @@ export default class Tabs extends Component {
 
     return items.reduce(
       (result, item, index) => {
-        const { key = index, title, content, getContent, disabled, tabClassName, tabSelectedClassName, panelClassName } = item;
+        const { key = index, title, content, getContent, disabled, tabClassName, tabSelectedClassName, tabDisabledClassName, tabCollapsedClassName, tabFirstClassName, panelClassName } = item;
 
         const selected = selectedTabKey === key;
         const payload = { tabIndex, collapsed, selected, disabled, key };
@@ -183,6 +183,9 @@ export default class Tabs extends Component {
           allowRemove: allowRemove && (!removeActiveOnly || selected),
           className: tabClassName,
           classNameSelected: tabSelectedClassName,
+          classNameDisabled: tabDisabledClassName,
+          classNameCollapsed: tabCollapsedClassName,
+          classNameFirst: tabFirstClassName,
         };
 
         const panelPayload = {
@@ -225,7 +228,23 @@ export default class Tabs extends Component {
     );
   };
 
-  getTabProps = ({ title, key, selected, collapsed, tabIndex, disabled, className, classNameSelected, onRemove, allowRemove }) => ({
+  getTabProps = (
+    {
+      title,
+      key,
+      selected,
+      collapsed,
+      tabIndex,
+      disabled,
+      className,
+      classNameSelected,
+      classNameDisabled,
+      classNameCollapsed,
+      classNameFirst,
+      onRemove,
+      allowRemove
+    }
+    ) => ({
     selected,
     allowRemove,
     children: title,
@@ -244,7 +263,10 @@ export default class Tabs extends Component {
       tabIndex,
       disabled,
       className,
-      classNameSelected
+      classNameSelected,
+      classNameDisabled,
+      classNameCollapsed,
+      classNameFirst
     }),
   });
 
@@ -265,18 +287,29 @@ export default class Tabs extends Component {
     hasChildSelected: isSelectedTabHidden,
   });
 
-  getClassNamesFor = (type, { selected, collapsed, tabIndex, disabled, className = '', classNameSelected = '', isHidden }) => {
+  getClassNamesFor = (type, {
+    selected,
+    collapsed,
+    tabIndex,
+    disabled,
+    className = '',
+    classNameSelected = '',
+    classNameDisabled = '',
+    classNameCollapsed = '',
+    classNameFirst = '',
+    isHidden
+  }) => {
     const { tabClass, panelClass } = this.props;
     switch (type) {
       case 'tab':
-        return cs('RRT__tab', className, tabClass, {
-          'RRT__tab--first': !tabIndex,
-          ['RRT__tab--selected' + (classNameSelected.length ? ' ' + classNameSelected : '')]: selected,
-          'RRT__tab--disabled': disabled,
-          'RRT__tab--collapsed': collapsed,
+        return cs(className.length ? className : 'RRT__tab', tabClass, {
+          [classNameFirst.length ? classNameFirst : 'RRT__tab--first']: !tabIndex,
+          [classNameSelected.length ? classNameSelected : 'RRT__tab--selected']: selected,
+          [classNameDisabled.length ? classNameDisabled : 'RRT__tab--disabled']: disabled,
+          [classNameCollapsed.length ? classNameCollapsed : 'RRT__tab--collapsed']: collapsed
         });
       case 'panel':
-        return cs('RRT__panel', className, panelClass, { 'RRT__panel--hidden': isHidden });
+        return cs(className.length ? className : 'RRT__panel', panelClass, { 'RRT__panel--hidden': isHidden });
       default:
         return '';
     }
@@ -341,7 +374,7 @@ export default class Tabs extends Component {
   };
 
   render() {
-    const { showInkBar, containerClass, tabsWrapperClass, showMore, transform, showMoreLabel, unmountOnExit } =
+    const { showInkBar, tabsClass, containerClass, tabsWrapperClass, accordionClass, showMore, transform, showMoreLabel, unmountOnExit } =
       this.props;
     const { tabDimensions } = this.state;
     const { tabsVisible, tabsHidden, panels, isSelectedTabHidden } = this.getTabs();
@@ -349,8 +382,8 @@ export default class Tabs extends Component {
     const selectedTabKey = this.getSelectedTabKey();
     const selectedTabDimensions = tabDimensions[selectedTabKey] || {};
 
-    const containerClasses = cs('RRT__container', containerClass);
-    const tabsClasses = cs('RRT__tabs', tabsWrapperClass, { RRT__accordion: isCollapsed });
+    const containerClasses = containerClass !== undefined ? containerClass : 'RRT__container';
+    const tabsClasses = cs(tabsClass !== undefined ? tabsClass : 'RRT__tabs', tabsWrapperClass, { [accordionClass !== undefined ? accordionClass : 'RRT__accordion']: isCollapsed });
 
     const handleResize = showMore || transform;
 
@@ -427,7 +460,6 @@ Tabs.propTypes = {
   containerClass: PropTypes.string,
   tabsWrapperClass: PropTypes.string,
   tabClass: PropTypes.string,
-  tabClassSelected: PropTypes.string,
   panelClass: PropTypes.string,
   // optional external id. Force rerender when it changes
   // eslint-disable-next-line react/forbid-prop-types
@@ -450,7 +482,6 @@ Tabs.defaultProps = {
   containerClass: undefined,
   tabsWrapperClass: undefined,
   tabClass: undefined,
-  tabClassSelected: undefined,
   panelClass: undefined,
   showMoreLabel: '...',
   unmountOnExit: true,
